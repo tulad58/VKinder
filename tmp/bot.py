@@ -60,77 +60,103 @@ def get_photo(owner_id, album_id, extended, photo_sizes, count):
                     s.append(d)
     return sorted(s, key=lambda x: int(x['likes']), reverse=True)[:3]
 
-for event in longpoll.listen():
-    if event.type == VkEventType.MESSAGE_NEW:
-        if event.to_me:
-            request = event.text
-            if request.lower() == "да":
-                message = f'Вы согласились, {event.user_id}, отлично!\n\n\
-                    Давайте введем параметры поиска.\n\
-                    город, возраст от, возраст до, пол (м/ж) - через запятую с пробелом\n\
-                    примеры: Москва, 25, 30, м; New-York, 19, 25, ж; Нальчик-20, 35, 40, м'
-                write_msg(event.user_id, message)
-                break
-            if request.lower() == "нет":
-                message = f'Вы отказались, {event.user_id}, возвращайтесь, если надумаете'
-                write_msg(event.user_id, message)
-            message = 'Привет! Тут можно познакомиться, желаете?\nнажмите Да/Нет'
-            write_msg(event.user_id, message, start_keyboard)
-
-for event in longpoll.listen():
-    found = []
-    if event.type == VkEventType.MESSAGE_NEW:
-        if event.to_me:
-            request = event.text
-            if re.search(r"^[\w\-а-яА-я\d]*,{1}\s{1}[\d]{2,3},{1}\s{1}[\d]{2,3},{1}\s{1}[мжМЖ]{1}$", request):
-                data = (request.split(', '))
-                if data[3].lower() == 'ж':
-                    data[3] = '1'
-                else:
-                    data[3] = '2'
-                write_msg(event.user_id, f"Данные приняты, нажмите 'Поиск'", search_keyboard)
-            elif request == "Поиск":
-                write_msg(event.user_id, "Начинаем")
-                search = VK.matches_found('bdate, city, sex, home_town', hometown=data[0], age_from=int(data[1]), age_to=int(data[2]), sex=int(data[3]), count=30)
-                for i in search:
-                    if len(found) == 5:
-                        break
-                    if 'home_town' in i:  # Не всегда в выводе есть поле
-                        photos = get_photo(owner_id=str(i['id']), album_id='profile', extended=1, photo_sizes='m', count=10)
-                        # pprint(f'photos = {photos}')
-                        if len(photos) == 3:  # Если фото присутствуют в количестве 3х
-                            found.append({'id': i['id'], 'link': f'https://vk.com/id{i["id"]}', 'first_name': i['first_name'], 'last_name': i['last_name'], 'photos': photos, 'home_town': i['home_town']})
-                # break
-                if not found:  # Если ничего не нашлось
-                    write_msg(event.user_id, "Данные по Вашему запросу не найдены,\n\
-                              попоробуйте изменить его")
-                else:  # Если нашлось
+def query():
+    for event in longpoll.listen():
+        if event.type == VkEventType.MESSAGE_NEW:
+            if event.to_me:
+                request = event.text
+                if request.lower() == "да":
+                    message = f'Вы согласились, {event.user_id}, отлично!\n\n\
+                        Давайте введем параметры поиска.\n\
+                        город, возраст от, возраст до, пол (м/ж) - через запятую с пробелом\n\
+                        примеры: Москва, 25, 30, м; New-York, 19, 25, ж; Нальчик-20, 35, 40, м'
+                    write_msg(event.user_id, message)
                     break
+                if request.lower() == "нет":
+                    message = f'Вы отказались, {event.user_id}, возвращайтесь, если надумаете'
+                    write_msg(event.user_id, message)
+                message = 'Привет! Тут можно познакомиться, желаете?\nнажмите Да/Нет'
+                write_msg(event.user_id, message, start_keyboard)
 
-            else:
-                write_msg(event.user_id, "Введенные данные не годятся, введите еще раз:\n\
-                          город, возраст от, возраст до, пол (м/ж) - через запятую с пробелом\n\
-                    примеры: Москва, 25, 30, м; New-York, 19, 25, ж; Нальчик-20, 35, 40, м")
+def search_users():
+    for event in longpoll.listen():
+        found = []
+        if event.type == VkEventType.MESSAGE_NEW:
+            if event.to_me:
+                request = event.text
+                if re.search(r"^[\w\-а-яА-Я\d]*,{1}\s{1}[\d]{2,3},{1}\s{1}[\d]{2,3},{1}\s{1}[мжМЖ]{1}$", request):
+                    data = (request.split(', '))
+                    if data[3].lower() == 'ж':
+                        data[3] = '1'
+                    else:
+                        data[3] = '2'
+                    write_msg(event.user_id, f"Данные приняты, нажмите 'Поиск'", search_keyboard)
+                elif request == "Поиск":
+                    write_msg(event.user_id, "Начинаем")
+                    search = VK.matches_found(
+                        'bdate, city, sex, home_town',
+                        hometown=data[0],
+                        age_from=int(data[1]),
+                        age_to=int(data[2]),
+                        sex=int(data[3]),
+                        count=30,
+                        has_photo=1,
+                        online=1
+                        )
+                    for i in search:
+                        if len(found) == 5:
+                            break
+                        if 'home_town' in i:  # Не всегда в выводе есть ключ
+                            photos = get_photo(
+                                owner_id=str(i['id']),
+                                album_id='profile',
+                                extended=1,
+                                photo_sizes='m',
+                                count=10)
+                            if len(photos) == 3:  # Если фото присутствуют в количестве 3х
+                                found.append({
+                                    'id': i['id'],
+                                    'link': f'https://vk.com/id{i["id"]}',
+                                    'first_name': i['first_name'],
+                                    'last_name': i['last_name'],
+                                    'photos': photos,
+                                    'home_town': i['home_town']
+                                    })
+                    if not found:  # Если ничего не нашлось
+                        write_msg(event.user_id, "Данные по Вашему запросу не найдены,\n\
+                                попоробуйте изменить его")
+                    else:  # Если нашлось
+                        break
+                else:
+                    write_msg(event.user_id, "Введенные данные не годятся, введите еще раз:\n\
+                            город, возраст от, возраст до, пол (м/ж) - через запятую с пробелом\n\
+                        примеры: Москва, 25, 30, м; New-York, 19, 25, ж; Нальчик-20, 35, 40, м")
+    write_msg(event.user_id, "Данные собраны")
+    return found
 
-print('\n\n\n')
-print(f'found = len = {len(found)}')
-print(f'found:')
-pprint(found)
+if __name__ == '__main__':
+    query()
+    a = search_users()
 
-write_msg(event.user_id, "Данные собраны")
+    print('\n\n\n')
+    print(f'found = len = {len(a)}')
+    print(f'found:')
+    pprint(a)
 
-for event in longpoll.listen():
 
-    if event.type == VkEventType.MESSAGE_NEW:
-        if event.to_me:
-            request = event.text
-            # print(request)
-            if request == "привет":
-                write_msg(event.user_id, f"Хай, {event.user_id}", search_keyboard)
-            elif request == "пока":
-                write_msg(event.user_id, "Пока((")
-            else:
-                write_msg(event.user_id, "Не поняла вашего ответа...")
+
+# for event in longpoll.listen():
+
+#     if event.type == VkEventType.MESSAGE_NEW:
+#         if event.to_me:
+#             request = event.text
+#             # print(request)
+#             if request == "привет":
+#                 write_msg(event.user_id, f"Хай, {event.user_id}", search_keyboard)
+#             elif request == "пока":
+#                 write_msg(event.user_id, "Пока((")
+#             else:
+#                 write_msg(event.user_id, "Не поняла вашего ответа...")
 
 # for event in longpoll.listen():
 #     if event.type == VkEventType.MESSAGE_NEW:
@@ -147,36 +173,3 @@ for event in longpoll.listen():
 #                 vk_messages_send(message, event.chat_id, start_keyboard)
 #         message = 'Тут можно познакомиться, желаете?\nнажмите Да/Нет'
 #         vk_messages_send(message, event.chat_id, start_keyboard)
-
-# for event in longpoll.listen():
-#     if event.type == VkEventType.MESSAGE_NEW:
-
-#         if event.to_me:
-#             request = event.text
-
-#             if request == "привет":
-#                 write_msg(event.user_id, f"Хай, {event.user_id}")
-#             elif request == "пока":
-#                 write_msg(event.user_id, "Пока((")
-#             else:
-#                 write_msg(event.user_id, "Не поняла вашего ответа...")
-
-
-
-
-
-
-
-
-# for event in longpoll.listen():
-#     if event.type == VkEventType.MESSAGE_NEW:
-
-#         if event.to_me:
-#             request = event.text
-
-#             if request == "привет":
-#                 write_msg(event.user_id, f"Хай, {event.user_id}")
-#             elif request == "пока":
-#                 write_msg(event.user_id, "Пока((")
-#             else:
-#                 write_msg(event.user_id, "Не поняла вашего ответа...")

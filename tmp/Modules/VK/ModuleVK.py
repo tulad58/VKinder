@@ -46,12 +46,9 @@ class VKontakte:
             'v': '5.131'
         }
         response = requests.get(url=url, params=params).json()
-        # print(response['response']['object_id'])
         return response['response']['object_id']
 
     def photos(self, owner_id, album_id, extended, photo_sizes, count):
-        # print(f'owner_id = {owner_id}')
-        # print(f'owner_id_type = {type(owner_id)}')
         if not str(owner_id).isdigit():
             owner_id = self.resolve_screen_name(owner_id)
 
@@ -66,7 +63,7 @@ class VKontakte:
             'v': '5.131'
         }
         response = requests.get(url=url, params=params)
-        # pprint(f'response from def photos = {response.json()}')
+        pprint(f'response from def photos = {response.json()}')
         return response
 
     def user(self, owner_id, fields):
@@ -81,36 +78,30 @@ class VKontakte:
             'v': '5.131'
         }
         response = requests.get(url=url, params=params).json()['response'][0]
-        # print(response)
         ret = {
         'id': response['id'],
         'first_name': response['first_name'],
         'last_name': response['last_name'],
         'sex': response['sex'],
-        # 'city': response_user['city']['title'],
         'city': response['city']['id'],
         'bdate': response['bdate'],
         'link': f"https://vk.com/id{response['id']}"
         }
         return ret
 
-    # def matches_found(self, fields, sex, city, count, age_from, age_to):
-    def matches_found(self, fields, sex, hometown, count, age_from, age_to):
+    def matches_found(self, fields, sex, hometown, count, age_from, age_to, has_photo, online):
         url = 'https://api.vk.com/method/users.search'
         params = {
             'access_token': self.token,
             'sex': sex,
             'count': count,
-            # 'city': int(users['city']['title'],
-            # 'city': int(city),
-            # 'city': city,
             'hometown': hometown,
             'age_from': age_from,
             'age_to': age_to,
             'fields': fields,
-            # 'link': f"https://vk.com/id{id}",
+            'has_photo': has_photo,
+            'online': online,
             'v': '5.131'
         }
-        # response = requests.get(url=url, params=params).json()['response']['items'][0]
         response = requests.get(url=url, params=params).json()['response']['items']
         return response
