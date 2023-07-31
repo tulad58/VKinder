@@ -1,4 +1,5 @@
 import requests
+from pprint import pprint
 
 
 class VKontakte:
@@ -49,7 +50,9 @@ class VKontakte:
         return response['response']['object_id']
 
     def photos(self, owner_id, album_id, extended, photo_sizes, count):
-        if not owner_id.isdigit():
+        # print(f'owner_id = {owner_id}')
+        # print(f'owner_id_type = {type(owner_id)}')
+        if not str(owner_id).isdigit():
             owner_id = self.resolve_screen_name(owner_id)
 
         url = 'https://api.vk.com/method/photos.get'
@@ -63,7 +66,7 @@ class VKontakte:
             'v': '5.131'
         }
         response = requests.get(url=url, params=params)
-        # print(response)
+        # pprint(f'response from def photos = {response.json()}')
         return response
 
     def user(self, owner_id, fields):
