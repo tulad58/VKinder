@@ -2,15 +2,12 @@ from random import randrange
 import configparser
 import re
 from pprint import pprint
-import json
-import time
+# import json
+# import time
 
 import vk_api
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.longpoll import VkLongPoll, VkEventType
-
-from Modules.VK.ModuleVK import VKontakte
-
 
 # Получение токенов из файла ini:
 config = configparser.ConfigParser()
@@ -18,39 +15,41 @@ config.read('tokens/tokens.ini')
 token_g = config['TOKENS']['VK_token_GROUP']
 token_u = config['TOKENS']['VK_token']
 
-vk = vk_api.VkApi(token=token_g)
-longpoll = VkLongPoll(vk)
+vk_g = vk_api.VkApi(token=token_g)
+longpoll = VkLongPoll(vk_g)
+vk_u = vk_api.VkApi(token=token_u)
 
-VK = VKontakte(token_u)
-
-print('\n' * 20)
-
+# https://dev.vk.com/ru/api/bots/development/keyboard
 start_keyboard = VkKeyboard(one_time=True)
 start_keyboard.add_button('Да', color=VkKeyboardColor.POSITIVE)
 start_keyboard.add_button('Нет', color=VkKeyboardColor.NEGATIVE)
 
-search_keyboard = VkKeyboard(one_time=True)
-search_keyboard.add_button('Поиск', color=VkKeyboardColor.PRIMARY)
+sex_keyboard = VkKeyboard(one_time=True)
+sex_keyboard.add_button('Мужской', color=VkKeyboardColor.PRIMARY)
+sex_keyboard.add_button('Женский', color=VkKeyboardColor.PRIMARY)
 
-keyboard = VkKeyboard(one_time=True)
-keyboard.add_button('Привет', color=VkKeyboardColor.NEGATIVE)
-keyboard.add_button('Клавиатура', color=VkKeyboardColor.POSITIVE)
-keyboard.add_line()
-keyboard.add_location_button()
-keyboard.add_line()
-keyboard.add_button('Далее', color=VkKeyboardColor.PRIMARY)
+next_keyboard = VkKeyboard(one_time=True)
+next_keyboard.add_button('Далее', color=VkKeyboardColor.PRIMARY)
 
 def write_msg(user_id, message, keyboards=None):
-    ext = {'user_id': user_id, 'message': message, 'random_id': randrange(10 ** 7),}
+    ext = {'user_id': user_id,
+            'message': message,
+            'random_id': randrange(10 ** 7),}
     if keyboards is not None:
         ext['keyboard'] = keyboards.get_keyboard()
-    vk.method('messages.send', ext)
+    vk_g.method('messages.send', ext)
 
 def get_photo(owner_id, album_id, extended, photo_sizes, count):
     s = []
-    photos = VK.photos(owner_id, album_id, extended, photo_sizes, count).json()
+    photos = vk_u.method('photos.get', {
+                            'owner_id': owner_id,
+                            'album_id': album_id,
+                            'extended': extended,
+                            'photo_sizes': photo_sizes,
+                            'count': count,
+                        })
     if not 'error' in photos:
-        for i in photos['response']['items']:
+        for i in photos['items']:
             for j in i['sizes']:
                 if j['type'] == photo_sizes:
                     d = {
@@ -64,112 +63,149 @@ def query():
     for event in longpoll.listen():
         if event.type == VkEventType.MESSAGE_NEW:
             if event.to_me:
+                event_user_id = event.user_id
+                name = vk_u.method('users.get', {'user_ids': event_user_id})[0]['first_name']
                 request = event.text
                 if request.lower() == "да":
-                    message = f'Вы согласились, {event.user_id}, отлично!\n\n\
-                        Давайте введем параметры поиска.\n\
-                        город, возраст от, возраст до, пол (м/ж) - через запятую с пробелом\n\
-                        примеры: Москва, 25, 30, м; New-York, 19, 25, ж; Нальчик-20, 35, 40, м'
-                    write_msg(event.user_id, message)
+                    message = f'Вы согласились, {name}, отлично!'
+                    write_msg(event_user_id, message)
                     break
                 if request.lower() == "нет":
-                    message = f'Вы отказались, {event.user_id}, возвращайтесь, если надумаете'
-                    write_msg(event.user_id, message)
-                message = 'Привет! Тут можно познакомиться, желаете?\nнажмите Да/Нет'
-                write_msg(event.user_id, message, start_keyboard)
+                    message = f'{name}, Вы отказались, возвращайтесь, если надумаете'
+                    write_msg(event_user_id, message)
+                message = f'Привет!\n\n\
+                            Здесь можно поискать аккаунты\n\
+                            пользователей по параметрам.\n\
+                            Желаете?\n\n\
+                            Нажмите кнопки [Да] или [Нет]'
+                write_msg(event_user_id, message, start_keyboard)
+    return event_user_id
 
-def search_users():
-    for event in longpoll.listen():
-        found = []
-        if event.type == VkEventType.MESSAGE_NEW:
-            if event.to_me:
-                request = event.text
-                if re.search(r"^[\w\-а-яА-Я\d]*,{1}\s{1}[\d]{2,3},{1}\s{1}[\d]{2,3},{1}\s{1}[мжМЖ]{1}$", request):
-                    data = (request.split(', '))
-                    if data[3].lower() == 'ж':
-                        data[3] = '1'
-                    else:
-                        data[3] = '2'
-                    write_msg(event.user_id, f"Данные приняты, нажмите 'Поиск'", search_keyboard)
-                elif request == "Поиск":
-                    write_msg(event.user_id, "Начинаем")
-                    search = VK.matches_found(
-                        'bdate, city, sex, home_town',
-                        hometown=data[0],
-                        age_from=int(data[1]),
-                        age_to=int(data[2]),
-                        sex=int(data[3]),
-                        count=30,
-                        has_photo=1,
-                        online=1
-                        )
-                    for i in search:
-                        if len(found) == 5:
-                            break
-                        if 'home_town' in i:  # Не всегда в выводе есть ключ
-                            photos = get_photo(
-                                owner_id=str(i['id']),
-                                album_id='profile',
-                                extended=1,
-                                photo_sizes='m',
-                                count=10)
-                            if len(photos) == 3:  # Если фото присутствуют в количестве 3х
-                                found.append({
-                                    'id': i['id'],
-                                    'link': f'https://vk.com/id{i["id"]}',
-                                    'first_name': i['first_name'],
-                                    'last_name': i['last_name'],
-                                    'photos': photos,
-                                    'home_town': i['home_town']
-                                    })
-                    if not found:  # Если ничего не нашлось
-                        write_msg(event.user_id, "Данные по Вашему запросу не найдены,\n\
-                                попоробуйте изменить его")
-                    else:  # Если нашлось
-                        break
-                else:
-                    write_msg(event.user_id, "Введенные данные не годятся, введите еще раз:\n\
-                            город, возраст от, возраст до, пол (м/ж) - через запятую с пробелом\n\
-                        примеры: Москва, 25, 30, м; New-York, 19, 25, ж; Нальчик-20, 35, 40, м")
-    write_msg(event.user_id, "Данные собраны")
+def create_found(result_search_data):
+    event_user_id = result_search_data[0]
+    search = vk_u.method(
+                        'users.search',
+                        {
+                        'fields': 'bdate, city, sex, home_town',
+                        'hometown': result_search_data[1],
+                        'age_from': result_search_data[2],
+                        'age_to': result_search_data[3],
+                        'sex': result_search_data[4],
+                        'count': 300,
+                        'has_photo': 1,
+                        'online': 1
+                        }
+                        )['items']
+    found = []
+    for i in search:
+        if len(found) == 5:
+            break
+        if 'home_town' in i:  # Не всегда в выводе есть ключ
+            # print('str 121:')
+            photos = get_photo(
+                owner_id=str(i['id']),
+                album_id='profile',
+                extended=1,
+                photo_sizes='m',
+                count=10)
+            if len(photos) == 3:  # Если фото присутствуют в количестве 3х
+                found.append({
+                    'id': i['id'],
+                    'link': f'https://vk.com/id{i["id"]}',
+                    'first_name': i['first_name'],
+                    'last_name': i['last_name'],
+                    'photos': photos,
+                    'home_town': i['home_town']
+                    })
     return found
 
+def requesting_search_data(result_query):
+    result = []
+    event_user_id = result_query
+    result.append(event_user_id)
+    message = f'Давайте введем параметры поиска.\n\
+    Нужно будет ввести по очереди следующие данные:\n\n\
+     - Название города, в котором хотите найти друзей\n\
+     - Возраст с которого начнем поиск\n\
+     - Возраст на котором закончим поиск\n\
+     - Пол'
+    write_msg(event_user_id, message)
+    message = 'Введите желаемый город, и нажмите [ENTER]'
+    write_msg(event_user_id, message)
+    for event in longpoll.listen():
+        if event.type == VkEventType.MESSAGE_NEW:
+            if event.to_me:
+                request_town = event.text
+                if re.search(r"^\d*[a-zA-Z\-а-яА-Я]+\d*$", request_town):
+                    write_msg(event_user_id, 'Данные приняты')
+                    result.append(request_town)
+                    break
+                else:
+                    message = 'Введенные данные не годятся, введите еще раз:\n\
+                        примеры: Москва; New-York; Нальчик-20'
+                    write_msg(event_user_id, message)
+
+    message = 'Введите желаемый возраст начала поиска\n\
+                цифрами, (16 и более лет), и нажмите [ENTER]'
+    write_msg(event_user_id, message)
+    for event in longpoll.listen():
+        if event.type == VkEventType.MESSAGE_NEW:
+            if event.to_me:
+                request_from = event.text
+                if re.search(r"^\d+$", request_from) and int(request_from) >= 16:
+                    write_msg(event_user_id, 'Данные приняты')
+                    result.append(request_from)
+                    break
+                else:
+                    message = 'Введенные данные не годятся, введите еще раз:\n\
+                                цифрами, (16 и более лет), и нажмите [ENTER]'
+                    write_msg(event_user_id, message)
+
+    message = 'Введите желаемый возраст окончания поиска\n\
+                (16 и более лет), и нажмите [ENTER]'
+    write_msg(event_user_id, message)
+    for event in longpoll.listen():
+        if event.type == VkEventType.MESSAGE_NEW:
+            if event.to_me:
+                request_to = event.text
+                if re.search(r"^\d+$", request_to) and int(request_to) >= 16:
+                    write_msg(event_user_id, 'Данные приняты')
+                    result.append(request_to)
+                    break
+                else:
+                    message = 'Введенные данные не годятся, введите еще раз:\n\
+                                цифрами, (16 и более лет), и нажмите [ENTER]'
+                    write_msg(event_user_id, message)
+
+    message = 'Выберите желаемый пол,\n\
+                и нажмите соответствующую кнопку'
+    write_msg(event_user_id, message, sex_keyboard)
+    for event in longpoll.listen():
+        if event.type == VkEventType.MESSAGE_NEW:
+            if event.to_me:
+                request_sex = event.text
+                if re.search(r"^(Мужской|Женский){1}$", request_sex):
+                    write_msg(event_user_id, 'Данные приняты')
+                    result.append(request_sex)
+                    break
+                else:
+                    message = 'Введенные данные не годятся, выберите пол,\n\
+                                и нажмите соответствующую кнопку'
+                    write_msg(event_user_id, message, sex_keyboard)
+    if result[4].lower() == 'ж':
+        result[4] = '1'
+    else:
+        result[4] = '2'
+    return result
+
 if __name__ == '__main__':
-    query()
-    a = search_users()
 
-    print('\n\n\n')
-    print(f'found = len = {len(a)}')
-    print(f'found:')
-    pprint(a)
+    # Выполняем запрос - хочет человек познакомиться с кем-нибудь, или нет:
+    result_query = query()
 
+    # Запрос данных для поиска по параметрам:
+    result_search_data = requesting_search_data(result_query)
 
-
-# for event in longpoll.listen():
-
-#     if event.type == VkEventType.MESSAGE_NEW:
-#         if event.to_me:
-#             request = event.text
-#             # print(request)
-#             if request == "привет":
-#                 write_msg(event.user_id, f"Хай, {event.user_id}", search_keyboard)
-#             elif request == "пока":
-#                 write_msg(event.user_id, "Пока((")
-#             else:
-#                 write_msg(event.user_id, "Не поняла вашего ответа...")
-
-# for event in longpoll.listen():
-#     if event.type == VkEventType.MESSAGE_NEW:
-#         if 'да' in event.message['text'].lower():
-#             if event.from_chat:
-#                 message = 'Вы согласились, отлично!\n\
-#                     Давайте введем параметры поиска...\n\
-#                     город, возраст, пол (м/ж) - через запятую'
-#                 vk_messages_send(message, event.chat_id)
-#             break
-#         if 'нет' in event.message['text'].lower():
-#             if event.from_chat:
-#                 message = 'Вы отказались, возвращайтесь, если надумаете'
-#                 vk_messages_send(message, event.chat_id, start_keyboard)
-#         message = 'Тут можно познакомиться, желаете?\nнажмите Да/Нет'
-#         vk_messages_send(message, event.chat_id, start_keyboard)
+    # Конечный вывод:
+    found = create_found(result_search_data)
+    pprint(found)
