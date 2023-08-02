@@ -199,6 +199,11 @@ def requesting_search_data(result_query):
     # print(result)
     return result
 
+def data_to_json(data):
+    with open('data.json', 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
+
+
 if __name__ == '__main__':
 
     # Выполняем запрос - хочет человек познакомиться с кем-нибудь, или нет:
@@ -209,4 +214,5 @@ if __name__ == '__main__':
 
     # Конечный вывод:
     found = create_found(result_search_data)
+    data_to_json(found)
     pprint(found)
