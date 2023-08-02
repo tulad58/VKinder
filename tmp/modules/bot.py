@@ -2,8 +2,7 @@ from random import randrange
 import configparser
 import re
 from pprint import pprint
-# import json
-# import time
+import json
 
 import vk_api
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
@@ -11,7 +10,7 @@ from vk_api.longpoll import VkLongPoll, VkEventType
 
 # Получение токенов из файла ini:
 config = configparser.ConfigParser()
-config.read('tokens/tokens.ini')
+config.read('configs/tokens.ini')
 token_g = config['TOKENS']['VK_token_GROUP']
 token_u = config['TOKENS']['VK_token']
 
@@ -117,6 +116,8 @@ def create_found(result_search_data):
                     'photos': photos,
                     'home_town': i['home_town']
                     })
+    with open('found.json', 'w', encoding='UTF-8') as found_file:
+        json.dump(found, found_file, indent=4, ensure_ascii=False)
     return found
 
 def requesting_search_data(result_query):
@@ -192,20 +193,20 @@ def requesting_search_data(result_query):
                     message = 'Введенные данные не годятся, выберите пол,\n\
                                 и нажмите соответствующую кнопку'
                     write_msg(event_user_id, message, sex_keyboard)
-    if result[4].lower() == 'ж':
+    if result[4].lower() == 'женский':
         result[4] = '1'
     else:
         result[4] = '2'
     return result
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
 
-    # Выполняем запрос - хочет человек познакомиться с кем-нибудь, или нет:
-    result_query = query()
+#     # Выполняем запрос - хочет человек познакомиться с кем-нибудь, или нет:
+#     result_query = query()
 
-    # Запрос данных для поиска по параметрам:
-    result_search_data = requesting_search_data(result_query)
+#     # Запрос данных для поиска по параметрам:
+#     result_search_data = requesting_search_data(result_query)
 
-    # Конечный вывод:
-    found = create_found(result_search_data)
-    pprint(found)
+#     # Конечный вывод:
+#     found = create_found(result_search_data)
+#     pprint(found)
