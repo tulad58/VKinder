@@ -192,10 +192,11 @@ def requesting_search_data(result_query):
                     message = 'Введенные данные не годятся, выберите пол,\n\
                                 и нажмите соответствующую кнопку'
                     write_msg(event_user_id, message, sex_keyboard)
-    if result[4].lower() == 'ж':
+    if result[4].lower() == 'женский':
         result[4] = '1'
     else:
         result[4] = '2'
+    # print(result)
     return result
 
 if __name__ == '__main__':
