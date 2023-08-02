@@ -197,19 +197,9 @@ def requesting_search_data(result_query):
         result[4] = '1'
     else:
         result[4] = '2'
-    # print(result)
     return result
 
-<<<<<<< HEAD:tmp/modules/bot.py
 # if __name__ == '__main__':
-=======
-def data_to_json(data):
-    with open('data.json', 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
-
-
-if __name__ == '__main__':
->>>>>>> ec6ebfaa32cea7320f73928d99853b37b4b80142:tmp/bot.py
 
 #     # Выполняем запрос - хочет человек познакомиться с кем-нибудь, или нет:
 #     result_query = query()
@@ -217,13 +207,6 @@ if __name__ == '__main__':
 #     # Запрос данных для поиска по параметрам:
 #     result_search_data = requesting_search_data(result_query)
 
-<<<<<<< HEAD:tmp/modules/bot.py
 #     # Конечный вывод:
 #     found = create_found(result_search_data)
 #     pprint(found)
-=======
-    # Конечный вывод:
-    found = create_found(result_search_data)
-    data_to_json(found)
-    pprint(found)
->>>>>>> ec6ebfaa32cea7320f73928d99853b37b4b80142:tmp/bot.py

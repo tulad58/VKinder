@@ -1,3 +1,5 @@
+# createdb -U postgres Coursework_2
+# dropdb -U postgres Coursework_2
 from pprint import pprint
 import json
 import bd
