@@ -31,21 +31,25 @@ class User(Base):
     sex = sq.Column(Enum(MyEnum))
     profile_link = sq.Column(sq.String(length=60), nullable=False, unique=True)
     photo1 = sq.Column(sq.String(length=300), nullable=False)
+    photo2 = sq.Column(sq.String(length=300), nullable=False)
+    photo3 = sq.Column(sq.String(length=300), nullable=False)
 
 
     def __str__(self):
         return f'User {self.id}: (f_name: {self.f_name}, l_name: {self.l_name}, vk_id: {self.vk_id}, age: {self.age}, \
-        hometown: {self.hometown}, sex: {self.sex})'
+        hometown: {self.hometown}, sex: {self.sex}, photos: {self.photo1}, {self.photo2}, {self.photo3})'
 
-    def __init__(self, vk_id, f_name, l_name, profile_link, photo1):
+    def __init__(self, vk_id, f_name, l_name, hometown, profile_link, photo1, photo2, photo3):
         self.vk_id = vk_id,
         self.f_name = f_name,
         self.l_name = l_name,
         # self.age = age,
-        # self.hometown = hometown
+        self.hometown = hometown
         # self.sex = sex
         self.profile_link = profile_link
         self.photo1 = photo1
+        self.photo2 = photo2
+        self.photo3 = photo3
 
 
 class Favorite(Base):
@@ -57,19 +61,19 @@ class Favorite(Base):
     l_name = sq.Column(sq.String(length=20))
     age = sq.Column(sq.Integer)
     hometown = sq.Column(sq.String(length=20))
-    sex = sq.Column(Enum(MyEnum), nullable=False)
+    sex = sq.Column(Enum(MyEnum))
     profile_link = sq.Column(sq.String(length=60), nullable=False, unique=True)
     photo1 = sq.Column(sq.String(length=100), nullable=False)
     photo2 = sq.Column(sq.String(length=60))
     photo3 = sq.Column(sq.String(length=60))
 
-    def __init__(self, vk_id, f_name, l_name, age, hometown, sex, profile_link, photo1, photo2, photo3):
+    def __init__(self, vk_id, f_name, l_name, hometown, profile_link, photo1, photo2, photo3):
         self.vk_id = vk_id,
         self.f_name = f_name,
         self.l_name = l_name,
-        self.age = age,
+        # self.age = age,
         self.hometown = hometown
-        self.sex = sex
+        # self.sex = sex
         self.profile_link = profile_link
         self.photo1 = photo1
         self.photo2 = photo2
