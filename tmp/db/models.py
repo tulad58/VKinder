@@ -5,9 +5,6 @@ from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
 Base = declarative_base()
 
-def create_connection(user_name, password, host_name, port, db_name):
-    DSN = f'postgresql://{user_name}:{password}@{host_name}:{port}/{db_name}'
-    return DSN
 
 def create_tables(engine):
     Base.metadata.drop_all(engine)
