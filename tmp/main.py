@@ -16,7 +16,6 @@ if __name__ == '__main__':
         data = json.load(file)
     # pprint(data)
     # print(dsn)
-
     print(users_info_for_bot) # Возвращаемая информация из бд, выводит всех пользователей
 
 
