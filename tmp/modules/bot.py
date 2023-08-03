@@ -2,8 +2,7 @@ from random import randrange
 import configparser
 import re
 from pprint import pprint
-# import json
-# import time
+import json
 
 import vk_api
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
@@ -11,7 +10,7 @@ from vk_api.longpoll import VkLongPoll, VkEventType
 
 # Получение токенов из файла ini:
 config = configparser.ConfigParser()
-config.read('tokens/tokens.ini')
+config.read('configs/tokens.ini')
 token_g = config['TOKENS']['VK_token_GROUP']
 token_u = config['TOKENS']['VK_token']
 
@@ -117,6 +116,8 @@ def create_found(result_search_data):
                     'photos': photos,
                     'home_town': i['home_town']
                     })
+    with open('found.json', 'w', encoding='UTF-8') as found_file:
+        json.dump(found, found_file, indent=4, ensure_ascii=False)
     return found
 
 def requesting_search_data(result_query):
@@ -196,23 +197,16 @@ def requesting_search_data(result_query):
         result[4] = '1'
     else:
         result[4] = '2'
-    # print(result)
     return result
 
-def data_to_json(data, file_name):
-    with open(file_name, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
+# if __name__ == '__main__':
 
+#     # Выполняем запрос - хочет человек познакомиться с кем-нибудь, или нет:
+#     result_query = query()
 
-if __name__ == '__main__':
+#     # Запрос данных для поиска по параметрам:
+#     result_search_data = requesting_search_data(result_query)
 
-    # Выполняем запрос - хочет человек познакомиться с кем-нибудь, или нет:
-    result_query = query()
-
-    # Запрос данных для поиска по параметрам:
-    result_search_data = requesting_search_data(result_query)
-
-    # Конечный вывод:
-    found = create_found(result_search_data)
-    data_to_json(found, 'data.json')
-    pprint(found)
+#     # Конечный вывод:
+#     found = create_found(result_search_data)
+#     pprint(found)
