@@ -1,11 +1,14 @@
 from sys import path
 from os.path import dirname as dir
-path.append(dir(path[0]))
 import sqlalchemy as sq
 import json
 from pathlib import Path
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 from db.models import User, Favorite, User_Favorite, create_tables
+from ..configs import DSN
+
+path.append(dir(path[0])) # Для импорта из main нужно добавить путь
+
 def create_connection(user_name, password, host_name, port, db_name):
     DSN = f'postgresql://{user_name}:{password}@{host_name}:{port}/{db_name}'
     return DSN
@@ -54,8 +57,6 @@ class Read:
         return q.all()
 
 
-
-Base = declarative_base()
 DSN = create_connection('postgres', 'Admin', 'localhost', 5432, 'VKinder')
 engine = sq.create_engine(DSN)
 create_tables(engine)
@@ -67,5 +68,4 @@ create_instance.add_data_to_db(data)
 session.commit()
 read_db_instance = Read()
 users_info_for_bot = read_db_instance.read_from_db()
-# print(users_info_for_bot)
 session.close()
