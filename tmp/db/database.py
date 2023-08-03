@@ -1,9 +1,11 @@
+from sys import path
+from os.path import dirname as dir
+path.append(dir(path[0]))
 import sqlalchemy as sq
 import json
 from pathlib import Path
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
-from models import User, Favorite, User_Favorite, create_tables
-
+from db.models import User, Favorite, User_Favorite, create_tables
 def create_connection(user_name, password, host_name, port, db_name):
     DSN = f'postgresql://{user_name}:{password}@{host_name}:{port}/{db_name}'
     return DSN
@@ -19,8 +21,8 @@ class Create:
                         profile_link=record.get('link'),
                         hometown=record.get('home_town'),
                         photo1=record.get('photos')[0]['url'],
-                        photo2 = record.get('photos')[1]['url'],
-                        photo3 = record.get('photos')[2]['url'],
+                        photo2=record.get('photos')[1]['url'],
+                        photo3=record.get('photos')[2]['url'],
             )
         )
 
@@ -52,17 +54,18 @@ class Read:
         return q.all()
 
 
-if __name__ == '__main__':
-    Base = declarative_base()
-    DSN = create_connection('postgres', 'Admin', 'localhost', 5432, 'VKinder')
-    engine = sq.create_engine(DSN)
-    create_tables(engine)
-    Session = sessionmaker(bind=engine)
-    session = Session()
-    data = get_data_json('..\\data.json')
-    create_instance = Create()
-    create_instance.add_data_to_db(data)
-    session.commit()
-    read_db_instance = Read()
-    users_info_for_bot = read_db_instance.read_from_db()
-    session.close()
+
+Base = declarative_base()
+DSN = create_connection('postgres', 'Admin', 'localhost', 5432, 'VKinder')
+engine = sq.create_engine(DSN)
+create_tables(engine)
+Session = sessionmaker(bind=engine)
+session = Session()
+data = get_data_json('found.json')
+create_instance = Create()
+create_instance.add_data_to_db(data)
+session.commit()
+read_db_instance = Read()
+users_info_for_bot = read_db_instance.read_from_db()
+# print(users_info_for_bot)
+session.close()
