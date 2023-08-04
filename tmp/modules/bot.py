@@ -114,7 +114,8 @@ def create_found(result_search_data):
                     'first_name': i['first_name'],
                     'last_name': i['last_name'],
                     'photos': photos,
-                    'home_town': i['home_town']
+                    'home_town': i['home_town'],
+                    'requester': event_user_id
                     })
     with open('found.json', 'w', encoding='UTF-8') as found_file:
         json.dump(found, found_file, indent=4, ensure_ascii=False)
