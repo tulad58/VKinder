@@ -1,7 +1,7 @@
 # createdb -U postgres Coursework_2
 # dropdb -U postgres Coursework_2
 from pprint import pprint
-from db.database import users_info_for_bot
+# from db.database import users_info_for_bot
 import json
 from modules import bot
 
@@ -16,6 +16,5 @@ if __name__ == '__main__':
         data = json.load(file)
     # pprint(data)
     # print(dsn)
+    from db.database import users_info_for_bot
     print(users_info_for_bot) # Возвращаемая информация из бд, выводит всех пользователей
-
-
