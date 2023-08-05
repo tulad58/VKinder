@@ -228,9 +228,7 @@ def view(result_query, answer):
                     request_choice = event.text
                     if re.search(r"^В избранные$", request_choice):
                         write_msg(result_query, 'ОК, в избранные')
-                        print(i[2])
                         white.append(i[2])
-                        print(white)
                         break
                     if re.search(r"^В черный список$", request_choice):
                         write_msg(result_query, 'ОК, в черный список')
