@@ -10,7 +10,7 @@ from vk_api.longpoll import VkLongPoll, VkEventType
 
 # Получение токенов из файла ini:
 config = configparser.ConfigParser()
-config.read('configs/tokens.ini')
+config.read('tokens/tokens.ini')
 token_g = config['TOKENS']['VK_token_GROUP']
 token_u = config['TOKENS']['VK_token']
 
@@ -27,16 +27,24 @@ sex_keyboard = VkKeyboard(one_time=True)
 sex_keyboard.add_button('Мужской', color=VkKeyboardColor.PRIMARY)
 sex_keyboard.add_button('Женский', color=VkKeyboardColor.PRIMARY)
 
-next_keyboard = VkKeyboard(one_time=True)
-next_keyboard.add_button('Далее', color=VkKeyboardColor.PRIMARY)
+choice_keyboard = VkKeyboard(one_time=True)
+choice_keyboard.add_button('В избранные', color=VkKeyboardColor.POSITIVE)
+choice_keyboard.add_button('В черный список', color=VkKeyboardColor.NEGATIVE)
+choice_keyboard.add_button('Далее', color=VkKeyboardColor.PRIMARY)
 
-def write_msg(user_id, message, keyboards=None):
+def write_msg(user_id, message, keyboards=None, photo=None):
     ext = {'user_id': user_id,
             'message': message,
             'random_id': randrange(10 ** 7),}
     if keyboards is not None:
         ext['keyboard'] = keyboards.get_keyboard()
+    if photo is not None:
+        # a = {type}{owner_id}_{media_id}
+        # a = {photo}{user_id}_{photo}
+        ext['attachment'] = photo
+        # ext['attachment'] = a
     vk_g.method('messages.send', ext)
+
 
 def get_photo(owner_id, album_id, extended, photo_sizes, count):
     s = []
@@ -138,7 +146,7 @@ def requesting_search_data(result_query):
         if event.type == VkEventType.MESSAGE_NEW:
             if event.to_me:
                 request_town = event.text
-                if re.search(r"^\d*[a-zA-Z\-а-яА-Я]+\d*$", request_town):
+                if re.search(r"^\d*[a-zA-Z\-а-яА-Я\s]+\d*$", request_town):
                     write_msg(event_user_id, 'Данные приняты')
                     result.append(request_town)
                     break
@@ -200,14 +208,38 @@ def requesting_search_data(result_query):
         result[4] = '2'
     return result
 
-# if __name__ == '__main__':
-
-#     # Выполняем запрос - хочет человек познакомиться с кем-нибудь, или нет:
-#     result_query = query()
-
-#     # Запрос данных для поиска по параметрам:
-#     result_search_data = requesting_search_data(result_query)
-
-#     # Конечный вывод:
-#     found = create_found(result_search_data)
-#     pprint(found)
+def view(result_query, answer):
+    white = []
+    black = []
+    for i in answer:
+        message = f'\
+        {i[0]} {i[1]}\n\
+        Ссылка на профиль - {i[2]}\n\
+        Фото пользователя:'
+        # photo = f'{i[3]}, {i[4]}, {i[5]}'
+        photo = [i[3], i[4], i[5]]
+        write_msg(result_query, message, photo=photo)
+        message = 'Выберите дальнейшие действия,\n\
+                    и нажмите соответствующую кнопку'
+        write_msg(result_query, message, choice_keyboard)
+        for event in longpoll.listen():
+            if event.type == VkEventType.MESSAGE_NEW:
+                if event.to_me:
+                    request_choice = event.text
+                    if re.search(r"^В избранные$", request_choice):
+                        write_msg(result_query, 'ОК, в избранные')
+                        print(i[2])
+                        white.append(i[2])
+                        print(white)
+                        break
+                    if re.search(r"^В черный список$", request_choice):
+                        write_msg(result_query, 'ОК, в черный список')
+                        black.append(i[2])
+                        break
+                    if re.search(r"^Далее$", request_choice):
+                        write_msg(result_query, 'ОК, пропускаем')
+                        break
+                    message = 'Введенные данные не годятся,\n\
+                                нажмите соответствующую кнопку'
+                    write_msg(result_query, message, choice_keyboard)
+    return {'white': white, 'black': black}
