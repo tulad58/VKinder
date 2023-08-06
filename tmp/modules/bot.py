@@ -271,16 +271,16 @@ def go_to_favorites(result_query, answer_tmp_white=None, answer_tmp_black=None):
     for event in longpoll.listen():
                 if event.type == VkEventType.MESSAGE_NEW:
                     if event.to_me:
-                        request_choice = event.text
-                        if re.search(r"^В избранное$", request_choice):
+                        request_favorites = event.text
+                        if re.search(r"^В избранное$", request_favorites):
                             write_msg(result_query, 'ОК, в избранное')
                             pass
                             # break
-                        if re.search(r"^В черный список$", request_choice):
+                        if re.search(r"^В черный список$", request_favorites):
                             write_msg(result_query, 'ОК, в черный список')
                             pass
                             # break
-                        if re.search(r"^Новый поиск$", request_choice):
+                        if re.search(r"^Новый поиск$", request_favorites):
                             write_msg(result_query, 'ОК, поищем снова')
                             break
                         message = 'Введенные данные не годятся,\n\
