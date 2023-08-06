@@ -32,10 +32,18 @@ choice_keyboard.add_button('В избранные', color=VkKeyboardColor.POSITI
 choice_keyboard.add_button('В черный список', color=VkKeyboardColor.NEGATIVE)
 choice_keyboard.add_button('Далее', color=VkKeyboardColor.PRIMARY)
 
-favorites_keyboard = VkKeyboard(one_time=True)
-favorites_keyboard.add_button('В избранное', color=VkKeyboardColor.POSITIVE)
-favorites_keyboard.add_button('В черный список', color=VkKeyboardColor.NEGATIVE)
-favorites_keyboard.add_button('Новый поиск', color=VkKeyboardColor.PRIMARY)
+favorites_keyboard_1 = VkKeyboard(one_time=True)
+favorites_keyboard_1.add_button('В избранное', color=VkKeyboardColor.POSITIVE)
+favorites_keyboard_1.add_button('В черный список', color=VkKeyboardColor.NEGATIVE)
+favorites_keyboard_1.add_button('Новый поиск', color=VkKeyboardColor.PRIMARY)
+
+favorites_keyboard_2 = VkKeyboard(one_time=True)
+favorites_keyboard_2.add_button('В избранное', color=VkKeyboardColor.POSITIVE)
+favorites_keyboard_2.add_button('Новый поиск', color=VkKeyboardColor.PRIMARY)
+
+favorites_keyboard_3 = VkKeyboard(one_time=True)
+favorites_keyboard_3.add_button('В черный список', color=VkKeyboardColor.NEGATIVE)
+favorites_keyboard_3.add_button('Новый поиск', color=VkKeyboardColor.PRIMARY)
 
 
 # ----------------------------------------------------------------------
@@ -200,7 +208,7 @@ def create_found(result_search_data):
                 owner_id=str(i['id']),
                 album_id='profile',
                 extended=1,
-                photo_sizes='m',
+                photo_sizes='x',
                 count=10)
             if len(photos) == 3:  # Если фото присутствуют в количестве 3х
                 found.append({
@@ -249,7 +257,33 @@ def view(result_query, answer):
                     write_msg(result_query, message, choice_keyboard)
     return {'white': white, 'black': black}
 
-def go_to_favorites(result_query):
+def go_to_favorites(result_query, answer_tmp_white=None, answer_tmp_black=None):
+    if answer_tmp_white and answer_tmp_black:
+        favorites_keyboard = favorites_keyboard_1
+    if not answer_tmp_white and answer_tmp_black:
+        favorites_keyboard = favorites_keyboard_2
+    if answer_tmp_white and not answer_tmp_black:
+        favorites_keyboard = favorites_keyboard_3
     message = 'Список предложений закончился,\n\
-                нажмите соответствующую кнопку'
+                как желаете продолжить?\n\
+                Нажмите соответствующую кнопку'
     write_msg(result_query, message, favorites_keyboard)
+    for event in longpoll.listen():
+                if event.type == VkEventType.MESSAGE_NEW:
+                    if event.to_me:
+                        request_choice = event.text
+                        if re.search(r"^В избранное$", request_choice):
+                            write_msg(result_query, 'ОК, в избранное')
+                            pass
+                            # break
+                        if re.search(r"^В черный список$", request_choice):
+                            write_msg(result_query, 'ОК, в черный список')
+                            pass
+                            # break
+                        if re.search(r"^Новый поиск$", request_choice):
+                            write_msg(result_query, 'ОК, поищем снова')
+                            break
+                        message = 'Введенные данные не годятся,\n\
+                                    как желаете продолжить?\n\
+                                    Нажмите соответствующую кнопку'
+                        write_msg(result_query, message, favorites_keyboard)

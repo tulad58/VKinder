@@ -22,7 +22,7 @@ if __name__ == '__main__':
         # print(result_create_found)
         if result_create_found == 'not_search':
             bot.write_msg(result_query, 'По Вашему запросу ничего не найдено,\n\
-                          попробуйте еще раз')
+                                            попробуйте еще раз')
             continue
 
         # Открываем json
@@ -35,17 +35,25 @@ if __name__ == '__main__':
 
         # Возвращаемая информация из БД, выводит всех пользователей
         answer = users_info_for_bot
-        pprint(answer)
+        # answer_tmp_white = answer
+        # answer_tmp_black = answer
+        # pprint(answer)
 
         # Демонстрация пользователю отобранных предложений
         # В выводе - словарь с черным и белым списками
         selection_list = bot.view(result_query, answer)
         pprint(selection_list)
 
-        if selection_list['black'] and selection_list['white']:
-            bot.go_to_favorites(result_query)
+        # Если вывод просмотра пользователя содержит черный или белый листы,
+        # ему предлагается просмотреть их. Или запускается новый поиск.
+        if selection_list['black'] or selection_list['white']:
+            # Пока нет данных для проверки и вывода
+            # bot.go_to_favorites(result_query, answer_tmp_white, answer_tmp_black)
+            
+            # Тестю набор кнопок при наличии разных списков
+            bot.go_to_favorites(result_query, selection_list['black'], selection_list['white'])
         else:
             bot.write_msg(result_query, 'Вы ничего не выбрали,\n\
-                          черный и белый списки пусты,\n\
-                            попробуйте еще раз')
+                                        черный и белый списки пусты,\n\
+                                        попробуйте поиск еще раз')
             continue
