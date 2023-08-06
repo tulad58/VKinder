@@ -32,6 +32,14 @@ choice_keyboard.add_button('В избранные', color=VkKeyboardColor.POSITI
 choice_keyboard.add_button('В черный список', color=VkKeyboardColor.NEGATIVE)
 choice_keyboard.add_button('Далее', color=VkKeyboardColor.PRIMARY)
 
+favorites_keyboard = VkKeyboard(one_time=True)
+favorites_keyboard.add_button('В избранное', color=VkKeyboardColor.POSITIVE)
+favorites_keyboard.add_button('В черный список', color=VkKeyboardColor.NEGATIVE)
+favorites_keyboard.add_button('Новый поиск', color=VkKeyboardColor.PRIMARY)
+
+
+# ----------------------------------------------------------------------
+
 def write_msg(user_id, message, keyboards=None, photo=None):
     ext = {'user_id': user_id,
             'message': message,
@@ -39,12 +47,8 @@ def write_msg(user_id, message, keyboards=None, photo=None):
     if keyboards is not None:
         ext['keyboard'] = keyboards.get_keyboard()
     if photo is not None:
-        # a = {type}{owner_id}_{media_id}
-        # a = {photo}{user_id}_{photo}
         ext['attachment'] = photo
-        # ext['attachment'] = a
     vk_g.method('messages.send', ext)
-
 
 def get_photo(owner_id, album_id, extended, photo_sizes, count):
     s = []
@@ -65,6 +69,8 @@ def get_photo(owner_id, album_id, extended, photo_sizes, count):
                     }
                     s.append(d)
     return sorted(s, key=lambda x: int(x['likes']), reverse=True)[:3]
+
+# ----------------------------------------------------------------------
 
 def query():
     for event in longpoll.listen():
@@ -87,47 +93,6 @@ def query():
                             Нажмите кнопки [Да] или [Нет]'
                 write_msg(event_user_id, message, start_keyboard)
     return event_user_id
-
-def create_found(result_search_data):
-    event_user_id = result_search_data[0]
-    search = vk_u.method(
-                        'users.search',
-                        {
-                        'fields': 'bdate, city, sex, home_town',
-                        'hometown': result_search_data[1],
-                        'age_from': result_search_data[2],
-                        'age_to': result_search_data[3],
-                        'sex': result_search_data[4],
-                        'count': 300,
-                        'has_photo': 1,
-                        'online': 1
-                        }
-                        )['items']
-    found = []
-    for i in search:
-        if len(found) == 5:
-            break
-        if 'home_town' in i:  # Не всегда в выводе есть ключ
-            # print('str 121:')
-            photos = get_photo(
-                owner_id=str(i['id']),
-                album_id='profile',
-                extended=1,
-                photo_sizes='m',
-                count=10)
-            if len(photos) == 3:  # Если фото присутствуют в количестве 3х
-                found.append({
-                    'id': i['id'],
-                    'link': f'https://vk.com/id{i["id"]}',
-                    'first_name': i['first_name'],
-                    'last_name': i['last_name'],
-                    'photos': photos,
-                    'home_town': i['home_town'],
-                    'requester': event_user_id
-                    })
-    with open('found.json', 'w', encoding='UTF-8') as found_file:
-        json.dump(found, found_file, indent=4, ensure_ascii=False)
-    return found
 
 def requesting_search_data(result_query):
     result = []
@@ -152,7 +117,7 @@ def requesting_search_data(result_query):
                     break
                 else:
                     message = 'Введенные данные не годятся, введите еще раз:\n\
-                        примеры: Москва; New-York; Нальчик-20'
+                        примеры: Москва; New-York; Нальчик'
                     write_msg(event_user_id, message)
 
     message = 'Введите желаемый возраст начала поиска\n\
@@ -171,20 +136,20 @@ def requesting_search_data(result_query):
                                 цифрами, (16 и более лет), и нажмите [ENTER]'
                     write_msg(event_user_id, message)
 
-    message = 'Введите желаемый возраст окончания поиска\n\
-                (16 и более лет), и нажмите [ENTER]'
+    message = f'Введите желаемый возраст окончания поиска\n\
+                ({request_from} и более лет), и нажмите [ENTER]'
     write_msg(event_user_id, message)
     for event in longpoll.listen():
         if event.type == VkEventType.MESSAGE_NEW:
             if event.to_me:
                 request_to = event.text
-                if re.search(r"^\d+$", request_to) and int(request_to) >= 16:
+                if re.search(r"^\d+$", request_to) and int(request_to) >= int(request_from):
                     write_msg(event_user_id, 'Данные приняты')
                     result.append(request_to)
                     break
                 else:
-                    message = 'Введенные данные не годятся, введите еще раз:\n\
-                                цифрами, (16 и более лет), и нажмите [ENTER]'
+                    message = f'Введенные данные не годятся, введите еще раз:\n\
+                                цифрами, ({request_from} и более лет), и нажмите [ENTER]'
                     write_msg(event_user_id, message)
 
     message = 'Выберите желаемый пол,\n\
@@ -208,6 +173,49 @@ def requesting_search_data(result_query):
         result[4] = '2'
     return result
 
+
+def create_found(result_search_data):
+    event_user_id = result_search_data[0]
+    search = vk_u.method(
+                        'users.search',
+                        {
+                        'fields': 'bdate, city, sex, home_town',
+                        'hometown': result_search_data[1],
+                        'age_from': result_search_data[2],
+                        'age_to': result_search_data[3],
+                        'sex': result_search_data[4],
+                        'count': 300,
+                        'has_photo': 1,
+                        'online': 1
+                        }
+                        )['items']
+    if not search:
+        return 'not_search'
+    found = []
+    for i in search:
+        if len(found) == 5:  # ограничение на выборку по поиску
+            break
+        if 'home_town' in i:  # Не всегда в выводе есть ключ
+            photos = get_photo(
+                owner_id=str(i['id']),
+                album_id='profile',
+                extended=1,
+                photo_sizes='m',
+                count=10)
+            if len(photos) == 3:  # Если фото присутствуют в количестве 3х
+                found.append({
+                    'id': i['id'],
+                    'link': f'https://vk.com/id{i["id"]}',
+                    'first_name': i['first_name'],
+                    'last_name': i['last_name'],
+                    'photos': photos,
+                    'home_town': i['home_town'],
+                    'requester': event_user_id
+                    })
+    with open('found.json', 'w', encoding='UTF-8') as found_file:
+        json.dump(found, found_file, indent=4, ensure_ascii=False)
+    return found
+
 def view(result_query, answer):
     white = []
     black = []
@@ -216,10 +224,9 @@ def view(result_query, answer):
         {i[0]} {i[1]}\n\
         Ссылка на профиль - {i[2]}\n\
         Фото пользователя:'
-        # photo = f'{i[3]}, {i[4]}, {i[5]}'
-        photo = [i[3], i[4], i[5]]
+        photo = f'{i[3]},{i[4]},{i[5]}'
         write_msg(result_query, message, photo=photo)
-        message = 'Выберите дальнейшие действия,\n\
+        message = 'Выберите дальнейшее действие,\n\
                     и нажмите соответствующую кнопку'
         write_msg(result_query, message, choice_keyboard)
         for event in longpoll.listen():
@@ -241,3 +248,8 @@ def view(result_query, answer):
                                 нажмите соответствующую кнопку'
                     write_msg(result_query, message, choice_keyboard)
     return {'white': white, 'black': black}
+
+def go_to_favorites(result_query):
+    message = 'Список предложений закончился,\n\
+                нажмите соответствующую кнопку'
+    write_msg(result_query, message, favorites_keyboard)
