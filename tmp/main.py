@@ -19,6 +19,7 @@ if __name__ == '__main__':
     # print(dsn)
     from db.database import users_info_for_bot
     answer = users_info_for_bot
+
     # pprint(answer) # Возвращаемая информация из бд, выводит всех пользователей
     selection_list = bot.view(result_query, answer)
     pprint(selection_list)

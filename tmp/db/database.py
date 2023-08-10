@@ -3,9 +3,10 @@ from os.path import dirname as dir
 import sqlalchemy as sq
 import json
 from pathlib import Path
-from sqlalchemy.orm import declarative_base, relationship, sessionmaker
-from db.models import User, Favorite, User_Favorite, create_tables
-from ..configs import DSN
+from sqlalchemy.orm import relationship, sessionmaker
+from db.models import create_tables,  AbstractModel, Requester, User
+from sqlalchemy import exc
+
 
 path.append(dir(path[0])) # Для импорта из main нужно добавить путь
 
@@ -17,31 +18,50 @@ class Create:
     def __init__(self):
         pass
     def add_data_to_db(self, data):
-        for record in data:
-            session.add(User(vk_id=record.get('id'),
-                        f_name=record.get('first_name'),
-                        l_name=record.get('last_name'),
-                        profile_link=record.get('link'),
-                        hometown=record.get('home_town'),
-                        photo1=record.get('photos')[0]['url'],
-                        photo2=record.get('photos')[1]['url'],
-                        photo3=record.get('photos')[2]['url'],
-            )
-        )
+        try:
+            print("try")
+            for record in data:
+                session.add(User(vk_id=record.get('id'),
+                            f_name=record.get('first_name'),
+                            l_name=record.get('last_name'),
+                            profile_link=record.get('link'),
+                            hometown=record.get('home_town'),
+                            photo1=record.get('photos')[0]['url'],
+                            photo2=record.get('photos')[1]['url'],
+                            photo3=record.get('photos')[2]['url'],
+                            requester_fk=record.get('requester')
+                ))
+                print("try2")
+                session.commit()
+        except exc.IntegrityError:
+            print("ecxept")
+            session.rollback()
 
-    def add_to_favorite(self, data):
-        session.add(Favorite(
-            vk_id=data.get('id'),
-            f_name=data.get('first_name'),
-            l_name=data.get('last_name'),
-            profile_link=data.get('link'),
-            hometown=data.get('home_town'),
-            photo1=data.get('photos')[0]['url'],
-            photo2=data.get('photos')[1]['url'],
-            photo3=data.get('photos')[2]['url'],
-        ))
+    # def add_to_favorite(self, data):
+    #     session.add(Favorite(
+    #         vk_id=data.get('id'),
+    #         f_name=data.get('first_name'),
+    #         l_name=data.get('last_name'),
+    #         profile_link=data.get('link'),
+    #         hometown=data.get('home_town'),
+    #         photo1=data.get('photos')[0]['url'],
+    #         photo2=data.get('photos')[1]['url'],
+    #         photo3=data.get('photos')[2]['url'],
+    #         requester_fk=data.get('requester')
+    #     ))
 
 
+    def add_requester(self, data):
+        q = session.query(Requester).filter(Requester.requester_id == data[0].get('requester'))
+        new_q = data[0].get('requester')
+        try:
+            if new_q != q.one():
+                session.add(Requester(
+                    requester_id=data[0].get('requester')
+                ))
+                session.commit()
+        except exc.IntegrityError:
+            session.rollback()
 
 def get_data_json(route):
     p = Path(route)
@@ -64,8 +84,14 @@ Session = sessionmaker(bind=engine)
 session = Session()
 data = get_data_json('found.json')
 create_instance = Create()
+create_instance.add_requester(data)
+print("1")
 create_instance.add_data_to_db(data)
+print("2")
+# user.requesters.append(users)
 session.commit()
+print("3")
 read_db_instance = Read()
 users_info_for_bot = read_db_instance.read_from_db()
+
 session.close()
