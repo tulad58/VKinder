@@ -1,80 +1,74 @@
 import sqlalchemy as sq
-import enum
-from sqlalchemy import Enum
-from sqlalchemy.orm import declarative_base, relationship, sessionmaker
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import declarative_base, relationship, sessionmaker, as_declarative, mapped_column, Mapped
+from sqlalchemy.ext.declarative import declared_attr
 
 Base = declarative_base()
 
-def create_connection(user_name, password, host_name, port, db_name):
-    DSN = f'postgresql://{user_name}:{password}@{host_name}:{port}/{db_name}'
-    return DSN
 
 def create_tables(engine):
     Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
 
-class MyEnum(enum.Enum):
-    male = 1
-    female = 2
+@as_declarative()
+class AbstractModel:
 
-class User(Base):
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    @classmethod
+    @declared_attr
+    def __tablename__(cls):
+        return cls.__name__.lower()
+
+
+class MainUser(Base, AbstractModel):
+    __tablename__ = "main_user"
+
+    vk_id: Mapped[int] = mapped_column(nullable=False, unique=True)
+
+    children: Mapped[list["User"]] = relationship(back_populates="parent")
+    def __str__(self):
+        return f"{self.id},{self.vk_id}"
+
+class User(Base, AbstractModel):
     __tablename__ = "user"
 
-    id = sq.Column(sq.Integer, primary_key=True)
-    vk_id = sq.Column(sq.Integer, unique=True, nullable=False)
-    f_name = sq.Column(sq.String(length=20), nullable=False)
-    l_name = sq.Column(sq.String(length=20))
-    age = sq.Column(sq.Integer)
-    hometown = sq.Column(sq.String(length=1000))
-    sex = sq.Column(Enum(MyEnum))
-    profile_link = sq.Column(sq.String(length=60), nullable=False, unique=True)
-    photo1 = sq.Column(sq.String(length=300), nullable=False)
-    photo2 = sq.Column(sq.String(length=300), nullable=False)
-    photo3 = sq.Column(sq.String(length=300), nullable=False)
+    vk_id: Mapped[int] = mapped_column(nullable=False)
+    profile_link: Mapped[str] = mapped_column(nullable=False)
+    f_name: Mapped[str] = mapped_column(nullable=False)
+    l_name: Mapped[str] = mapped_column(nullable=False)
+    photo1: Mapped[str] = mapped_column(nullable=False)
+    photo2: Mapped[str] = mapped_column(nullable=False)
+    photo3: Mapped[str] = mapped_column(nullable=False)
+    hometown: Mapped[str] = mapped_column(nullable=False)
+    main_user_id: Mapped[int] = mapped_column(ForeignKey("main_user.id"), nullable=True)
 
+    parent: Mapped["MainUser"] = relationship(back_populates="children")
 
     def __str__(self):
-        return f'User {self.id}: (f_name: {self.f_name}, l_name: {self.l_name}, vk_id: {self.vk_id}, age: {self.age}, \
-        hometown: {self.hometown}, sex: {self.sex}, photos: {self.photo1}, {self.photo2}, {self.photo3})'
+        return f'User {self.id}: (f_name: {self.f_name}, l_name: {self.l_name}, vk_id: {self.vk_id}, profile_link:' \
+               f' {self.profile_link}, hometown: {self.hometown}, photos: {self.photo1}, {self.photo2}, {self.photo3})'
 
-    def __init__(self, vk_id, f_name, l_name, hometown, profile_link, photo1, photo2, photo3):
-        self.vk_id = vk_id,
-        self.f_name = f_name,
-        self.l_name = l_name,
-        self.hometown = hometown
-        self.profile_link = profile_link
-        self.photo1 = photo1
-        self.photo2 = photo2
-        self.photo3 = photo3
 
-class Favorite(Base):
+class Favorite(Base, AbstractModel):
     __tablename__ = 'favorite'
 
-    id = sq.Column(sq.Integer, primary_key=True)
-    vk_id = sq.Column(sq.Integer, nullable=False, unique=True)
-    profile_link = sq.Column(sq.String(length=60), nullable=False, unique=True)
-    photo = sq.Column(sq.String(length=300), nullable=False)
+    vk_id: Mapped[int] = mapped_column(nullable=False, unique=False)
+    profile_link: Mapped[str] = mapped_column(nullable=False)
+    photo1: Mapped[str] = mapped_column(nullable=False)
 
-    def __init__(self, vk_id, profile_link, photo):
-        self.vk_id = vk_id,
-        self.profile_link = profile_link
-        self.photo = photo
 
     def __str__(self):
         return f'vk_id: {self.vk_id}, profile_link: {self.profile_link}, photo: {self.photo}'
 
-class BlackList(Base):
+class BlackList(Base, AbstractModel):
     __tablename__ = 'black_list'
 
-    id = sq.Column(sq.Integer, primary_key=True)
-    vk_id = sq.Column(sq.Integer, nullable=False, unique=True)
-    profile_link = sq.Column(sq.String(length=60), nullable=False, unique=True)
-    photo = sq.Column(sq.String(length=300), nullable=False)
 
-    def __init__(self, vk_id, profile_link, photo):
-        self.vk_id = vk_id,
-        self.profile_link = profile_link
-        self.photo = photo
+    vk_id: Mapped[int] = mapped_column(nullable=False, unique=False)
+    profile_link: Mapped[str] = mapped_column(nullable=False)
+    photo1: Mapped[str] = mapped_column(nullable=False)
+
 
     def __str__(self):
         return f'vk_id: {self.vk_id}, profile_link: {self.profile_link}, photo: {self.photo}'

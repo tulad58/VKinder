@@ -31,8 +31,12 @@ if __name__ == '__main__':
                                     Введите что-нибудь в чат')
             continue
 
+        # Создание пользователя
+        new_user = db.database.main_users_info_for_bot()
+
         # Возвращаемая информация из БД, выводит всех пользователей
         answer = db.database.users_info_for_bot()
+
         # answer_tmp_white = answer
         # answer_tmp_black = answer
         # pprint(answer)

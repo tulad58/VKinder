@@ -1,8 +1,8 @@
 import sqlalchemy as sq
 import json
-# from sqlalchemy.orm import declarative_base, relationship, sessionmaker
+from sqlalchemy import select
 from sqlalchemy.orm import declarative_base, sessionmaker
-from db.models import User, Favorite, BlackList, create_tables
+from db.models import User, Favorite, BlackList, create_tables, MainUser
 def create_connection(user_name, password, host_name, port, db_name):
     DSN = f'postgresql://{user_name}:{password}@{host_name}:{port}/{db_name}'
     return DSN
@@ -11,6 +11,9 @@ class Create:
     def __init__(self):
         pass
     def add_data_to_db(self, data):
+        new_vk_id = data[0].get('requester')
+        main_user_id = session.execute(select(MainUser.id).where(MainUser.vk_id == new_vk_id)).first()
+        print(f"main_user_id:{main_user_id} {type(main_user_id)}")
         for record in data:
             session.add(User(vk_id=record.get('id'),
                         f_name=record.get('first_name'),
@@ -20,8 +23,16 @@ class Create:
                         photo1=record.get('photos')[0]['url'],
                         photo2=record.get('photos')[1]['url'],
                         photo3=record.get('photos')[2]['url'],
+                        main_user_id=main_user_id[0]
             )
         )
+
+    def add_new_main_user(self, data):
+        check_id = data[0].get('requester')
+        try:
+            session.add(MainUser(vk_id=check_id))
+        except Exception:
+            pass
 
     def add_data_to_favorite(self, data):
         print(data)
@@ -54,20 +65,35 @@ class Read:
     def read_from_db_users(self):
         q = session.query(User.f_name, User.l_name, User.profile_link, User.photo1, User.photo2, User.photo3)
         return q.all()
+
     def read_from_db_favorite(self):
         q = session.query(Favorite.vk_id, Favorite.profile_link, Favorite.photo)
         return q.all()
+
     def read_from_db_black(self):
         q = session.query(BlackList.vk_id, BlackList.profile_link, BlackList.photo)
         return q.all()
 
+    def read_from_main_users(self):
+        q = session.query(MainUser.id, MainUser.vk_id)
+        return q.all()
+
 Base = declarative_base()
-DSN = create_connection('postgres', '1', 'localhost', 5432, 'VKinder')
+DSN = create_connection('postgres', 'Admin', 'localhost', 5432, 'VKinder')
 engine = sq.create_engine(DSN)
 create_tables(engine)
 Session = sessionmaker(bind=engine)
 session = Session()
 
+def main_users_info_for_bot():
+    data_found = get_data_json('found.json')
+    create_instance = Create()
+    create_instance.add_new_main_user(data_found)
+    session.commit()
+    read_db_instance = Read()
+    res = read_db_instance.read_from_main_users()
+    print(f"main_users_info_for_bot {res}")
+    return res
 def users_info_for_bot():
     data_found = get_data_json('found.json')
     create_instance = Create()
@@ -92,5 +118,4 @@ def black_info_for_bot():
     session.commit()
     read_db_instance = Read()
     return read_db_instance.read_from_db_black()
-
 session.close()
