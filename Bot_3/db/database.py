@@ -7,11 +7,19 @@ def create_connection(user_name, password, host_name, port, db_name):
     DSN = f'postgresql://{user_name}:{password}@{host_name}:{port}/{db_name}'
     return DSN
 
+
+def get_current_user_vk_id(data):
+    vk_id = data[0].get('requester')
+    return vk_id
+
+
 class Create:
     def __init__(self):
         pass
+
+
     def add_data_to_db(self, data):
-        new_vk_id = data[0].get('requester')
+        new_vk_id = get_current_user_vk_id(data)
         main_user_id = session.execute(select(MainUser.id).where(MainUser.vk_id == new_vk_id)).first()
         print(f"main_user_id:{main_user_id} {type(main_user_id)}")
         for record in data:
@@ -28,7 +36,7 @@ class Create:
         )
 
     def add_new_main_user(self, data):
-        check_id = data[0].get('requester')
+        check_id = get_current_user_vk_id(data)
         try:
             session.add(MainUser(vk_id=check_id))
         except Exception:
@@ -62,8 +70,11 @@ def get_data_json(route):
 class Read:
     def __init__(self):
         pass
-    def read_from_db_users(self):
-        q = session.query(User.f_name, User.l_name, User.profile_link, User.photo1, User.photo2, User.photo3)
+    def read_from_db_users(self, data):
+        current_user_vk_id = get_current_user_vk_id(data)
+        current_user_id = session.query(MainUser.id).where(MainUser.vk_id==current_user_vk_id)
+        q = session.query(User.f_name, User.l_name, User.profile_link, User.photo1, User.photo2, User.photo3)\
+            .where(User.main_user_id==current_user_id)
         return q.all()
 
     def read_from_db_favorite(self):
@@ -100,7 +111,7 @@ def users_info_for_bot():
     create_instance.add_data_to_db(data_found)
     session.commit()
     read_db_instance = Read()
-    return read_db_instance.read_from_db_users()
+    return read_db_instance.read_from_db_users(data_found)
 
 def favorite_info_for_bot():
     data_favorite = get_data_json('favorites.json')
