@@ -21,7 +21,6 @@ class Create:
     def add_data_to_db(self, data):
         new_vk_id = get_current_user_vk_id(data)
         main_user_id = session.execute(select(MainUser.id).where(MainUser.vk_id == new_vk_id)).first()
-        print(f"main_user_id:{main_user_id} {type(main_user_id)}")
         for record in data:
             session.add(User(vk_id=record.get('id'),
                         f_name=record.get('first_name'),
@@ -43,9 +42,7 @@ class Create:
             pass
 
     def add_data_to_favorite(self, data):
-        print(data)
         for record in data:
-            print(record)
             session.add(Favorite(vk_id=record.get('id'),
                         profile_link=record.get('link'),
                         photo=record.get('photo')
@@ -53,9 +50,7 @@ class Create:
         )
 
     def add_data_to_black(self, data):
-        print(data)
         for record in data:
-            print(record)
             session.add(BlackList(vk_id=record.get('id'),
                         profile_link=record.get('link'),
                         photo=record.get('photo')
@@ -72,14 +67,16 @@ class Read:
         pass
     def read_from_db_users(self, data):
         current_user_vk_id = get_current_user_vk_id(data)
-        current_user_id = session.query(MainUser.id).where(MainUser.vk_id==current_user_vk_id)
-        q = session.query(User.f_name, User.l_name, User.profile_link, User.photo1, User.photo2, User.photo3)\
-            .where(User.main_user_id==current_user_id)
+        current_user_id = session.execute(select(MainUser.id).where(MainUser.vk_id==current_user_vk_id)).one()[0]
+        q = session.execute(select(User.f_name, User.l_name, User.profile_link, User.photo1, User.photo2, User.photo3)\
+            .where(User.main_user_id==current_user_id))
         return q.all()
 
     def read_from_db_favorite(self):
-        q = session.query(Favorite.vk_id, Favorite.profile_link, Favorite.photo)
-        return q.all()
+        q1 = session.query(Favorite.vk_id, Favorite.profile_link, Favorite.photo)
+        q2 = session.execute(select(Favorite.vk_id, Favorite.profile_link, Favorite.photo))
+        print(f"q1{q1}, q2{q2}")
+        return q1.all()
 
     def read_from_db_black(self):
         q = session.query(BlackList.vk_id, BlackList.profile_link, BlackList.photo)
@@ -93,6 +90,12 @@ Base = declarative_base()
 DSN = create_connection('postgres', 'Admin', 'localhost', 5432, 'VKinder')
 engine = sq.create_engine(DSN)
 create_tables(engine)
+
+# best practice
+# with Session() as session:
+#     session.add(user)
+#     session.commit()
+
 Session = sessionmaker(bind=engine)
 session = Session()
 
@@ -103,8 +106,8 @@ def main_users_info_for_bot():
     session.commit()
     read_db_instance = Read()
     res = read_db_instance.read_from_main_users()
-    print(f"main_users_info_for_bot {res}")
     return res
+
 def users_info_for_bot():
     data_found = get_data_json('found.json')
     create_instance = Create()
@@ -129,4 +132,5 @@ def black_info_for_bot():
     session.commit()
     read_db_instance = Read()
     return read_db_instance.read_from_db_black()
+
 session.close()

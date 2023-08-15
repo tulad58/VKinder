@@ -51,23 +51,23 @@ class User(Base, AbstractModel):
 
 
 class Favorite(Base, AbstractModel):
-    __tablename__ = 'favorite'
+    __tablename__ = "favorite"
 
     vk_id: Mapped[int] = mapped_column(nullable=False, unique=False)
     profile_link: Mapped[str] = mapped_column(nullable=False)
-    photo1: Mapped[str] = mapped_column(nullable=False)
+    photo: Mapped[str] = mapped_column(nullable=False)
 
 
     def __str__(self):
         return f'vk_id: {self.vk_id}, profile_link: {self.profile_link}, photo: {self.photo}'
 
 class BlackList(Base, AbstractModel):
-    __tablename__ = 'black_list'
+    __tablename__ = "black_list"
 
 
     vk_id: Mapped[int] = mapped_column(nullable=False, unique=False)
     profile_link: Mapped[str] = mapped_column(nullable=False)
-    photo1: Mapped[str] = mapped_column(nullable=False)
+    photo: Mapped[str] = mapped_column(nullable=False)
 
 
     def __str__(self):
