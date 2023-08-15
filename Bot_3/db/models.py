@@ -64,7 +64,6 @@ class Favorite(Base, AbstractModel):
 class BlackList(Base, AbstractModel):
     __tablename__ = "black_list"
 
-
     vk_id: Mapped[int] = mapped_column(nullable=False, unique=False)
     profile_link: Mapped[str] = mapped_column(nullable=False)
     photo: Mapped[str] = mapped_column(nullable=False)
