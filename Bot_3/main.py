@@ -31,9 +31,11 @@ if __name__ == '__main__':
                                     Введите что-нибудь в чат')
             continue
 
-        # Создание пользователя
-        new_user = db.database.main_users_info_for_bot()
-
+        # Создание пользователя надо разобраться почему на втором круге выдает ошибку без try except
+        try:
+            db.database.main_users_info_for_bot()
+        except Exception:
+            pass
         # Возвращаемая информация из БД, выводит всех пользователей
         answer = db.database.users_info_for_bot()
 

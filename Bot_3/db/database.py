@@ -3,6 +3,9 @@ import json
 from sqlalchemy import select
 from sqlalchemy.orm import declarative_base, sessionmaker
 from db.models import User, Favorite, BlackList, create_tables, MainUser
+from psycopg2.errorcodes import UNIQUE_VIOLATION
+from psycopg2 import errors
+
 def create_connection(user_name, password, host_name, port, db_name):
     DSN = f'postgresql://{user_name}:{password}@{host_name}:{port}/{db_name}'
     return DSN
@@ -39,6 +42,7 @@ class Create:
         try:
             session.add(MainUser(vk_id=check_id))
         except Exception:
+            print("Ошибка!")
             pass
 
     def add_data_to_favorite(self, data):
@@ -74,8 +78,8 @@ class Read:
 
     def read_from_db_favorite(self):
         q1 = session.query(Favorite.vk_id, Favorite.profile_link, Favorite.photo)
-        q2 = session.execute(select(Favorite.vk_id, Favorite.profile_link, Favorite.photo))
-        print(f"q1{q1}, q2{q2}")
+        # q2 = session.execute(select(Favorite.vk_id, Favorite.profile_link, Favorite.photo))
+
         return q1.all()
 
     def read_from_db_black(self):
@@ -88,7 +92,7 @@ class Read:
 
 Base = declarative_base()
 DSN = create_connection('postgres', 'Admin', 'localhost', 5432, 'VKinder')
-engine = sq.create_engine(DSN)
+engine = sq.create_engine(DSN, echo=True, echo_pool="debug")
 create_tables(engine)
 
 # best practice
@@ -100,37 +104,41 @@ Session = sessionmaker(bind=engine)
 session = Session()
 
 def main_users_info_for_bot():
-    data_found = get_data_json('found.json')
-    create_instance = Create()
-    create_instance.add_new_main_user(data_found)
-    session.commit()
-    read_db_instance = Read()
-    res = read_db_instance.read_from_main_users()
-    return res
+    with session as s:
+        data_found = get_data_json('found.json')
+        create_instance = Create()
+        create_instance.add_new_main_user(data_found)
+        s.commit()
+        read_db_instance = Read()
+        res = read_db_instance.read_from_main_users()
+        return res
 
 def users_info_for_bot():
-    data_found = get_data_json('found.json')
-    create_instance = Create()
-    create_instance.add_data_to_db(data_found)
-    session.commit()
-    read_db_instance = Read()
-    return read_db_instance.read_from_db_users(data_found)
+    with session as s:
+        data_found = get_data_json('found.json')
+        create_instance = Create()
+        create_instance.add_data_to_db(data_found)
+        s.commit()
+        read_db_instance = Read()
+        return read_db_instance.read_from_db_users(data_found)
 
 def favorite_info_for_bot():
-    data_favorite = get_data_json('favorites.json')
-    create_instance = Create()
-    create_instance.add_data_to_favorite(data_favorite)
-    session.commit()
-    read_db_instance = Read()
-    return read_db_instance.read_from_db_favorite()
+    with session as s:
+        data_favorite = get_data_json('favorites.json')
+        create_instance = Create()
+        create_instance.add_data_to_favorite(data_favorite)
+        s.commit()
+        read_db_instance = Read()
+        return read_db_instance.read_from_db_favorite()
 
 def black_info_for_bot():
-    data_black = get_data_json('black.json')
-    print(data_black)
-    create_instance = Create()
-    create_instance.add_data_to_black(data_black)
-    session.commit()
-    read_db_instance = Read()
-    return read_db_instance.read_from_db_black()
+    with session as s:
+        data_black = get_data_json('black.json')
+        print(data_black)
+        create_instance = Create()
+        create_instance.add_data_to_black(data_black)
+        s.commit()
+        read_db_instance = Read()
+        return read_db_instance.read_from_db_black()
 
-session.close()
+
