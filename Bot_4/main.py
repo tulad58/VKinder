@@ -55,7 +55,7 @@ if __name__ == '__main__':
         if selection_list['black'] or selection_list['favorites']:
             params = {}
             if selection_list['favorites']:
-                answer_favorite = db.database.favorite_info_for_bot()
+                answer_favorite = db.database.favorite_info_for_bot(user_id)
                 params['favorites'] = answer_favorite
             if selection_list['black']:
                 answer_black = db.database.black_info_for_bot()

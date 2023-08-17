@@ -26,7 +26,9 @@ class MainUser(Base, AbstractModel):
 
     vk_id: Mapped[int] = mapped_column(nullable=False, unique=True)
 
-    children: Mapped[list["User"]] = relationship(back_populates="parent")
+    children: Mapped[list["User"]] = relationship(back_populates="parents", secondary="favorite")
+    child_associations: Mapped[list["Favorite"]] = relationship(back_populates="parent")
+
     def __str__(self):
         return f"{self.id},{self.vk_id}"
 
@@ -43,8 +45,8 @@ class User(Base, AbstractModel):
     hometown: Mapped[str] = mapped_column(nullable=False)
     main_user_id: Mapped[int] = mapped_column(ForeignKey("main_user.id"), nullable=True)
 
-    parent: Mapped["MainUser"] = relationship(back_populates="children")
-
+    parents: Mapped[list["MainUser"]] = relationship(back_populates="children", secondary="favorite")
+    parent_associations: Mapped[list["Favorite"]] = relationship(back_populates="child")
     def __str__(self):
         return f'User {self.id}: (f_name: {self.f_name}, l_name: {self.l_name}, vk_id: {self.vk_id}, profile_link:' \
                f' {self.profile_link}, hometown: {self.hometown}, photos: {self.photo1}, {self.photo2}, {self.photo3})'
@@ -53,10 +55,11 @@ class User(Base, AbstractModel):
 class Favorite(Base, AbstractModel):
     __tablename__ = "favorite"
 
-    vk_id: Mapped[int] = mapped_column(nullable=False, unique=False)
-    profile_link: Mapped[str] = mapped_column(nullable=False)
-    photo: Mapped[str] = mapped_column(nullable=False)
+    main_user_id: Mapped[int] = mapped_column(ForeignKey("main_user.id"))
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"))
 
+    child: Mapped["User"] = relationship(back_populates="parent_associations")
+    parent: Mapped["MainUser"] = relationship(back_populates="child_associations")
 
     def __str__(self):
         return f'vk_id: {self.vk_id}, profile_link: {self.profile_link}, photo: {self.photo}'
