@@ -75,10 +75,10 @@ def remove_json():
         if os.path.isfile(i):
             try:
                 os.remove(i)
-                print(f'Файл {os.path.basename(i)} удален')
+                #print(f'Файл {os.path.basename(i)} удален')
             except OSError as error:
                 print(error)
-                print(f'Файл {os.path.basename(i)} не удален')
+                #print(f'Файл {os.path.basename(i)} не удален')
 
 def get_photo(owner_id, album_id, extended, photo_sizes, count):
     s = []
