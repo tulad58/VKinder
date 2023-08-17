@@ -336,8 +336,8 @@ def view(user_id, answer, skip):
             pars = re.search(r'(https:\/\/vk\.com\/id)(\d+)', i[2])
             id = int(pars.group(2))  # Выделение id пользователя из адреса
             viewed.add(id)
-            print(f'skip = {skip}')
-            print(f'id = {id}')
+            #print(f'skip = {skip}')
+            #print(f'id = {id}')
             if id not in skip:
                 message = f'\
                 {i[0]} {i[1]}\n\
