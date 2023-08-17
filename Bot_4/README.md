@@ -45,7 +45,7 @@
     createdb -U postgres VKinder
 ```
     - пароль по умолчанию "Admin"
-    - пароль можно отредактировать в файле db/database.py на строке DSN = create_connection
+    - пароль можно отредактировать в файле db/database.py на строке №94
 1. Установить необходимые библиотеки:
 ```
     pip install -r requirements.txt
