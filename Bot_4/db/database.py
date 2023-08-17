@@ -92,8 +92,8 @@ class Read:
 
 Base = declarative_base()
 # DSN = create_connection('postgres', 'Admin', 'localhost', 5432, 'VKinder')
-DSN = create_connection('postgres', '1', 'localhost', 5432, 'VKinder')
-engine = sq.create_engine(DSN, echo=True, echo_pool="debug")
+DSN = create_connection('postgres', 'Admin', 'localhost', 5432, 'VKinder')
+engine = sq.create_engine(DSN)
 create_tables(engine)
 
 # best practice
