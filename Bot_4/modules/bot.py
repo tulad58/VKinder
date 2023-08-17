@@ -110,7 +110,7 @@ def resolve_city(request_town):
 
 def search_by_user(data):
     user_id, bdate, city, sex, town = data
-    print(user_id, bdate, city, sex)
+    #print(user_id, bdate, city, sex)
     d_now = datetime.now().date()
     d_user = datetime.strptime(bdate, '%d.%m.%Y').date()
     a = d_now - d_user
@@ -299,7 +299,7 @@ def create_found(result_search_data, skip):
         return 'not_search'
     found = []
     for i in search:
-        print(i)
+        #print(i)
         if len(found) == 5:  # количество предложений по поиску
             break
         if (i.get('city') is not None and i.get('home_town') is not None and
