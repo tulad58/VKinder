@@ -24,6 +24,7 @@ class Create:
     def add_data_to_db(self, data):
         new_vk_id = get_current_user_vk_id(data)
         main_user_id = session.execute(select(MainUser.id).where(MainUser.vk_id == new_vk_id)).first()
+        print(main_user_id[0], "main_user_id[0]")
         for record in data:
             session.add(User(vk_id=record.get('id'),
                         f_name=record.get('first_name'),
@@ -45,11 +46,16 @@ class Create:
             print("Ошибка!")
             pass
 
-    def add_data_to_favorite(self, data):
+    def add_data_to_favorite(self, data, user_id):
+        new_main_user_id = session.execute(select(MainUser.id).where(MainUser.vk_id==user_id)).one()[0]
         for record in data:
-            session.add(Favorite(vk_id=record.get('id'),
-                        profile_link=record.get('link'),
-                        photo=record.get('photo')
+            new_user_id = session.execute(select(User.id).where(User.vk_id==record.get('id'))).first()[0]
+            session.add(Favorite(
+                # vk_id=record.get('id'),
+                        # profile_link=record.get('link'),
+                        # photo=record.get('photo'),
+                        user_id=new_user_id,
+                        main_user_id=new_main_user_id
             )
         )
 
@@ -76,11 +82,12 @@ class Read:
             .where(User.main_user_id==current_user_id))
         return q.all()
 
-    def read_from_db_favorite(self):
-        q1 = session.query(Favorite.vk_id, Favorite.profile_link, Favorite.photo)
+    def read_from_db_favorite(self,user_id):
+        # q1 = session.query(Favorite.vk_id, Favorite.profile_link, Favorite.photo)
         # q2 = session.execute(select(Favorite.vk_id, Favorite.profile_link, Favorite.photo))
+        q = session.execute(select(User.vk_id, User.profile_link, User.photo1).join_from(User, Favorite).join_from(User, MainUser))
 
-        return q1.all()
+        return q.all()
 
     def read_from_db_black(self):
         q = session.query(BlackList.vk_id, BlackList.profile_link, BlackList.photo)
@@ -122,14 +129,14 @@ def users_info_for_bot():
         read_db_instance = Read()
         return read_db_instance.read_from_db_users(data_found)
 
-def favorite_info_for_bot():
+def favorite_info_for_bot(user_id):
     with session as s:
         data_favorite = get_data_json('favorites.json')
         create_instance = Create()
-        create_instance.add_data_to_favorite(data_favorite)
+        create_instance.add_data_to_favorite(data_favorite, user_id)
         s.commit()
         read_db_instance = Read()
-        return read_db_instance.read_from_db_favorite()
+        return read_db_instance.read_from_db_favorite(user_id)
 
 def black_info_for_bot():
     with session as s:

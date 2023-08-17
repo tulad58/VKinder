@@ -54,7 +54,7 @@ if __name__ == '__main__':
             params = {}
             if selection_list['favorites']:
                 with open('favorites.json', 'r', encoding='UTF-8') as favorites_file:
-                    answer_favorite = db.database.favorite_info_for_bot()
+                    answer_favorite = db.database.favorite_info_for_bot(user_id)
                     print(f'answer_favorite = {answer_favorite}')
                     # favorites = json.load(favorites_file)
                     favorites = answer_favorite
@@ -76,3 +76,4 @@ if __name__ == '__main__':
                                         попробуйте поиск еще раз\n\n\
                                         Введите что-нибудь в чат')
             continue
+
