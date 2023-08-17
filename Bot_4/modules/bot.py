@@ -331,13 +331,13 @@ def create_found(result_search_data, skip):
 def view(user_id, answer, skip):
     favorites = []
     black = []
-    viewed = []
+    viewed = set()
     for i in answer:
             pars = re.search(r'(https:\/\/vk\.com\/id)(\d+)', i[2])
             id = int(pars.group(2))  # Выделение id пользователя из адреса
-            viewed.append(id)
-            # print(f'skip = {skip}')
-            # print(f'id = {id}')
+            viewed.add(id)
+            print(f'skip = {skip}')
+            print(f'id = {id}')
             if id not in skip:
                 message = f'\
                 {i[0]} {i[1]}\n\
