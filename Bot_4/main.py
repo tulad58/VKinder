@@ -1,7 +1,3 @@
-# createdb -U postgres VKinder
-# dropdb -U postgres VKinder
-# from pprint import pprint
-# import json
 from modules import bot
 import db.database
 

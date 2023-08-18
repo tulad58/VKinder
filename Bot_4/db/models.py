@@ -46,8 +46,11 @@ class User(Base, AbstractModel):
     hometown: Mapped[str] = mapped_column(nullable=False)
     main_user_id: Mapped[int] = mapped_column(ForeignKey("main_user.id"), nullable=True)
 
-    parents: Mapped[list["MainUser"]] = relationship(back_populates="children", secondary="favorite", overlaps="child_associations")
-    parent_associations: Mapped[list["Favorite"]] = relationship(back_populates="child", overlaps="children,parents")
+    parents: Mapped[list["MainUser"]] = relationship(back_populates="children",
+                                                     secondary="favorite",
+                                                     overlaps="child_associations")
+    parent_associations: Mapped[list["Favorite"]] = relationship(back_populates="child",
+                                                                 overlaps="children,parents")
 
     def __str__(self):
         return f'User {self.id}: (f_name: {self.f_name}, l_name: {self.l_name}, vk_id: {self.vk_id}, profile_link:' \
