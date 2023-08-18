@@ -1,9 +1,7 @@
 # createdb -U postgres VKinder
 # dropdb -U postgres VKinder
-from pprint import pprint
-import json
 from modules import bot
-import db.database
+import Bot_4.db.database
 
 if __name__ == '__main__':
     while True:
@@ -33,11 +31,11 @@ if __name__ == '__main__':
 
         # Создание пользователя надо разобраться почему на втором круге выдает ошибку без try except
         try:
-            db.database.main_users_info_for_bot()
+            Bot_4.db.database.main_users_info_for_bot(user_id)
         except Exception:
             pass
         # Возвращаемая информация из БД, выводит всех пользователей
-        answer = db.database.users_info_for_bot()
+        answer = Bot_4.db.database.users_info_for_bot()
 
         # answer_tmp_white = answer
         # answer_tmp_black = answer
@@ -54,14 +52,14 @@ if __name__ == '__main__':
             params = {}
             if selection_list['favorites']:
                 with open('favorites.json', 'r', encoding='UTF-8') as favorites_file:
-                    answer_favorite = db.database.favorite_info_for_bot(user_id)
+                    answer_favorite = Bot_4.db.database.favorite_info_for_bot(user_id)
                     print(f'answer_favorite = {answer_favorite}')
                     # favorites = json.load(favorites_file)
                     favorites = answer_favorite
                     params['favorites'] = favorites
             if selection_list['black']:
                 with open('black.json', 'r', encoding='UTF-8') as black_file:
-                    answer_black = db.database.black_info_for_bot()
+                    answer_black = Bot_4.db.database.black_info_for_bot()
                     # black = json.load(black_file)
                     black = answer_black
                     params['black'] = black

@@ -79,7 +79,6 @@ class Read:
 
     def read_from_db_favorite(self,user_id):
         q = session.execute(select(User.vk_id, User.profile_link, User.photo1).join_from(User, Favorite).join_from(User, MainUser))
-
         return q.all()
 
     def read_from_db_black(self):
@@ -94,8 +93,6 @@ Base = declarative_base()
 DSN = create_connection('postgres', 'Admin', 'localhost', 5432, 'VKinder')
 engine = sq.create_engine(DSN)
 create_tables(engine)
-
-
 Session = sessionmaker(bind=engine)
 session = Session()
 

@@ -13,6 +13,7 @@ if __name__ == '__main__':
     result_query = bot.query()
     # print(result_query)
     user_id = result_query[0]['id']
+
     while True:
         # Удаляем json файлы, если есть.
         bot.remove_json()
@@ -32,7 +33,6 @@ if __name__ == '__main__':
                                     Введите что-нибудь в чат')
             continue
 
-        # Создание пользователя надо разобраться почему на втором круге выдает ошибку без try except
         try:
             db.database.main_users_info_for_bot()
         except Exception:
